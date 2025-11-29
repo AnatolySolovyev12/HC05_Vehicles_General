@@ -9,11 +9,14 @@ SoftwareSerial mySerial(2, 3);
 
 String strData = "";
 boolean recievedFlag;
+
 bool boolUp = 0;
 bool boolDown = 0;
 bool boolLeft = 0;
 bool boolRight = 0;
 bool boolCentr = 0;
+bool light = 0;
+
 long long oldMillis = 0;
 byte interval = 60;
 
@@ -53,22 +56,25 @@ void loop() {
     if (strData == "LU") boolLeft = 0;
     if (strData == "RD") boolRight = 1;
     if (strData == "RU") boolRight = 0;
-    if (strData == "CD") boolCentr = !boolCentr;
-    //if (strData == "CU") boolCentr = 0;
+    if (strData == "CD") boolCentr = 1;
+    if (strData == "CU") boolCentr = 0;
+    if (strData == "LFD") light = !light;
+    //if (strData == "LFU") boolCentr = 0;
   }
 
 
   if (recievedFlag && (millis() - oldMillis >= interval)) // защита от дерганья если быстро переключать
   {
     oldMillis = millis();
-    
+
     if (boolUp) forward();
     else if (boolRight) right();
     else if (boolDown) backward();
     else if (boolLeft) left();
+    else if (boolCentr) stoping();
     else stoping();
 
-     ledForward();
+    ledForward();
   }
   recievedFlag = false;
   strData = "";
@@ -119,8 +125,8 @@ void stoping() // остановка
   digitalWrite(pinIN2, 0);
 }
 
-void ledForward() // остановка
+void ledForward() // светодиоды спереди
 {
-  digitalWrite(A0, boolCentr);
-  digitalWrite(A2, boolCentr);
+  digitalWrite(A0, light);
+  digitalWrite(A2, light);
 }
