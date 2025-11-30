@@ -1,7 +1,7 @@
-#define pinIN1 4
-#define pinIN2 8
-#define pinPWM1 5
-#define pinPWM2 9
+#define pinIN1 5
+#define pinIN2 9
+#define pinPWM1 6
+#define pinPWM2 10
 
 #include <SoftwareSerial.h>
 
@@ -20,6 +20,9 @@ bool light = 0;
 long long oldMillis = 0;
 byte interval = 60;
 
+byte pwmValueMotor1 = 255;
+byte pwmValueMotor2 = 255;
+
 //////////////////////////////////////////////////////////////////////////////////////////
 void setup()  {
 
@@ -33,6 +36,14 @@ void setup()  {
 
   Serial.begin(9600);
   mySerial.begin(9600);
+
+  // Timer0 (пины 5, 6)
+TCCR0A = _BV(WGM00) | _BV(WGM01) | _BV(COM0A1) | _BV(COM0B1);
+TCCR0B = _BV(CS00); // предделитель 1
+
+// Timer1 (пины 9, 10)
+TCCR1A = _BV(WGM10) | _BV(WGM12) | _BV(COM1A1) | _BV(COM1B1);
+TCCR1B = _BV(CS10);
 }
 
 
@@ -42,7 +53,7 @@ void loop() {
   while (mySerial.available() > 0) {
     strData += (char)mySerial.read();
     recievedFlag = true;
-    delay(2); // без этого не успеет уловить и записать все символы в строку
+    delay(4); // без этого не успеет уловить и записать все символы в строку
   }
 
 
@@ -59,7 +70,7 @@ void loop() {
     if (strData == "CD") boolCentr = 1;
     if (strData == "CU") boolCentr = 0;
     if (strData == "LFD") light = !light;
-    //if (strData == "LFU") boolCentr = 0;
+    //if (strData == "LFU") mySerial.write("TEST");
   }
 
 
@@ -87,42 +98,42 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////////
 void forward() // движение вперед
 {
-  digitalWrite(pinPWM1, 1);
-  digitalWrite(pinIN1, 0);
-  digitalWrite(pinPWM2, 1);
-  digitalWrite(pinIN2, 0);
+  analogWrite(pinPWM1, pwmValueMotor1);
+  analogWrite(pinIN1, 0);
+  analogWrite(pinPWM2, pwmValueMotor2);
+  analogWrite(pinIN2, 0);
 }
 
 void right() // движение вправо
 {
-  digitalWrite(pinPWM1, 1);
-  digitalWrite(pinIN1, 0);
-  digitalWrite(pinPWM2, 0);
-  digitalWrite(pinIN2, 1);
+  analogWrite(pinPWM1, pwmValueMotor1);
+  analogWrite(pinIN1, 0);
+  analogWrite(pinPWM2, 0);
+  analogWrite(pinIN2, pwmValueMotor2);
 }
 
 void backward() // движение назад
 {
-  digitalWrite(pinPWM1, 0);
-  digitalWrite(pinIN1, 1);
-  digitalWrite(pinPWM2, 0);
-  digitalWrite(pinIN2, 1);
+  analogWrite(pinPWM1, 0);
+  analogWrite(pinIN1, pwmValueMotor1);
+  analogWrite(pinPWM2, 0);
+  analogWrite(pinIN2, pwmValueMotor2);
 }
 
 void left() // движение влево
 {
-  digitalWrite(pinPWM1, 0);
-  digitalWrite(pinIN1, 1);
-  digitalWrite(pinPWM2, 1);
-  digitalWrite(pinIN2, 0);
+  analogWrite(pinPWM1, 0);
+  analogWrite(pinIN1, pwmValueMotor1);
+  analogWrite(pinPWM2, pwmValueMotor2);
+  analogWrite(pinIN2, 0);
 }
 
 void stoping() // остановка
 {
-  digitalWrite(pinPWM1, 0);
-  digitalWrite(pinIN1, 0);
-  digitalWrite(pinPWM2, 0);
-  digitalWrite(pinIN2, 0);
+  analogWrite(pinPWM1, 0);
+  analogWrite(pinIN1, 0);
+  analogWrite(pinPWM2, 0);
+  analogWrite(pinIN2, 0);
 }
 
 void ledForward() // светодиоды спереди
