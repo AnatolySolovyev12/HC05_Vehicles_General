@@ -38,12 +38,12 @@ void setup()  {
   mySerial.begin(9600);
 
   // Timer0 (пины 5, 6)
-TCCR0A = _BV(WGM00) | _BV(WGM01) | _BV(COM0A1) | _BV(COM0B1);
-TCCR0B = _BV(CS00); // предделитель 1
+  TCCR0A = _BV(WGM00) | _BV(WGM01) | _BV(COM0A1) | _BV(COM0B1);
+  TCCR0B = _BV(CS00); // предделитель 1
 
-// Timer1 (пины 9, 10)
-TCCR1A = _BV(WGM10) | _BV(WGM12) | _BV(COM1A1) | _BV(COM1B1);
-TCCR1B = _BV(CS10);
+  // Timer1 (пины 9, 10)
+  TCCR1A = _BV(WGM10) | _BV(WGM12) | _BV(COM1A1) | _BV(COM1B1);
+  TCCR1B = _BV(CS10);
 }
 
 
@@ -71,6 +71,30 @@ void loop() {
     if (strData == "CU") boolCentr = 0;
     if (strData == "LFD") light = !light;
     //if (strData == "LFU") mySerial.write("TEST");
+
+    if (strData == "L+" && pwmValueMotor1 < 255)
+    {
+      pwmValueMotor1 += 5;
+      mySerial.write(pwmValueMotor1);
+    }
+
+    if (strData == "R+" && pwmValueMotor2 < 255)
+    {
+      pwmValueMotor2 += 5;
+      mySerial.write(pwmValueMotor2);
+    }
+
+    if (strData == "L-" && pwmValueMotor1 > 0)
+    {
+      pwmValueMotor1 -= 5;
+      mySerial.write(pwmValueMotor1);
+    }
+
+    if (strData == "R-" && pwmValueMotor2 < 0)
+    {
+      pwmValueMotor2 -= 5;
+      mySerial.write(pwmValueMotor2);
+    }
   }
 
 
