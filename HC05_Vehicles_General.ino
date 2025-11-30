@@ -59,6 +59,7 @@ void loop() {
 
   if (strData != "") {
     Serial.println(strData);
+
     if (strData == "UD") boolUp = 1;
     if (strData == "UU") boolUp = 0;
     if (strData == "DD") boolDown = 1;
@@ -69,31 +70,36 @@ void loop() {
     if (strData == "RU") boolRight = 0;
     if (strData == "CD") boolCentr = 1;
     if (strData == "CU") boolCentr = 0;
-    if (strData == "LFD") light = !light;
+    if (strData == "LFD") 
+    {
+    light = !light;
+    mySerial.print("Light = ");
+    mySerial.println(light ? "ON" : "OFF");
+    }
     //if (strData == "LFU") mySerial.write("TEST");
 
     if (strData == "L+" && pwmValueMotor1 < 255)
     {
       pwmValueMotor1 += 5;
-      mySerial.write(pwmValueMotor1);
+      mySerial.print(pwmValueMotor1);
     }
 
     if (strData == "R+" && pwmValueMotor2 < 255)
     {
       pwmValueMotor2 += 5;
-      mySerial.write(pwmValueMotor2);
+      mySerial.print(pwmValueMotor2);
     }
 
     if (strData == "L-" && pwmValueMotor1 > 0)
     {
       pwmValueMotor1 -= 5;
-      mySerial.write(pwmValueMotor1);
+      mySerial.print(pwmValueMotor1);
     }
 
-    if (strData == "R-" && pwmValueMotor2 < 0)
+    if (strData == "R-" && pwmValueMotor2 > 0)
     {
       pwmValueMotor2 -= 5;
-      mySerial.write(pwmValueMotor2);
+      mySerial.print(pwmValueMotor2);
     }
   }
 
