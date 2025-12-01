@@ -165,6 +165,10 @@ void loop() {
       mySerial.println(correctValueStartSpeedMotor1);
       mySerial.print("Start speed M2 = ");
       mySerial.println(correctValueStartSpeedMotor2);
+      int val = analogRead(A4);
+      float voltage = (val * 5.0 / 1023.0) * 2.0;  // Значение на пине * максимальное напряжение для АЦП (5В - стандартное) / разрядность АЦП * R1+R2/R2 (R2 - тот который к GND)
+      mySerial.print("Voltage: "); 
+      mySerial.println(String(voltage, 2));
     }
 
     if (strData == "Save")
@@ -173,7 +177,7 @@ void loop() {
       currentGenStruct.STRUCT_maxSpeedMotor2 = maxSpeedMotor2;
       currentGenStruct.STRUCT_correctValueStartSpeedMotor1 = correctValueStartSpeedMotor1;
       currentGenStruct.STRUCT_correctValueStartSpeedMotor2 = correctValueStartSpeedMotor2;
-      
+
       EEPROM.put(1, currentGenStruct); // записываем новые значения переменных
 
       mySerial.print("OK");
