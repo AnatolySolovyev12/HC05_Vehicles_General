@@ -60,14 +60,14 @@ void setup()  {
 ////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
 
-//******************************************** // Получаем сообщение если есть что получать. Считываем его посимвольно в цикле и прибавляем к строке.
+  //******************************************** // Получаем сообщение если есть что получать. Считываем его посимвольно в цикле и прибавляем к строке.
   while (mySerial.available() > 0) {
     strData += (char)mySerial.read();
     delay(4); // без этого не успеет уловить и записать все символы в строку
   }
 
 
-//******************************************* // Обрабатываем полученную строку
+  //******************************************* // Обрабатываем полученную строку
   if (strData != "") {
     // Serial.println(strData);
 
@@ -124,11 +124,25 @@ void loop() {
       correctValueStartSpeedMotor2 = (byte)strData.substring(2).toInt();
       mySerial.print(correctValueStartSpeedMotor2);
     }
+
+    if (strData == "Status")
+    {
+      mySerial.print("Light = ");
+      mySerial.println(light ? "ON" : "OFF");
+      mySerial.print("Max speed M1 = ");
+      mySerial.println(maxSpeedMotor1);
+      mySerial.print("Max speed M2 = ");
+      mySerial.println(maxSpeedMotor2);
+      mySerial.print("Start speed M1 = ");
+      mySerial.println(correctValueStartSpeedMotor1);
+      mySerial.print("Start speed M2 = ");
+      mySerial.println(correctValueStartSpeedMotor2);
+    }
   }
 
 
-//****************************************************** // Выполняем управление согласно полученной информации
-  if (millis() - oldMillis >= interval) 
+  //****************************************************** // Выполняем управление согласно полученной информации
+  if (millis() - oldMillis >= interval)
   {
     oldMillis = millis();
 
