@@ -25,8 +25,12 @@ byte maxSpeedMotor1 = 255;
 byte maxSpeedMotor2 = 255;
 byte tempSpeedMotor1 = 0;
 byte tempSpeedMotor2 = 0;
+byte correctValueStartSpeedMotor1 = 0;
+byte correctValueStartSpeedMotor2 = 0;
 
 byte directionMotion = 0; // 0 - stopring / 1 - forward / 2 - bakward / 3 - left / 4 - right
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 void setup()  {
@@ -52,15 +56,18 @@ void setup()  {
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
 
+//******************************************** // Получаем сообщение если есть что получать. Считываем его посимвольно в цикле и прибавляем к строке.
   while (mySerial.available() > 0) {
     strData += (char)mySerial.read();
     delay(4); // без этого не успеет уловить и записать все символы в строку
   }
 
 
+//******************************************* // Обрабатываем полученную строку
   if (strData != "") {
     // Serial.println(strData);
 
@@ -105,20 +112,30 @@ void loop() {
       maxSpeedMotor2 -= 5;
       mySerial.print(maxSpeedMotor2);
     }
+
+    if (strData.indexOf("CL") != -1 && strData.length() <= 5)
+    {
+      correctValueStartSpeedMotor1 = (byte)strData.substring(2).toInt();
+      mySerial.print(correctValueStartSpeedMotor1);
+    }
+
+    if (strData.indexOf("CR") != -1 && strData.length() <= 5)
+    {
+      correctValueStartSpeedMotor2 = (byte)strData.substring(2).toInt();
+      mySerial.print(correctValueStartSpeedMotor2);
+    }
   }
 
 
-  if (millis() - oldMillis >= interval) // защита от дерганья если быстро переключать
+//****************************************************** // Выполняем управление согласно полученной информации
+  if (millis() - oldMillis >= interval) 
   {
     oldMillis = millis();
 
-
-
-    Serial.print(tempSpeedMotor1);
-    Serial.print("\t");
-    Serial.print(tempSpeedMotor2);
-    Serial.print("\t");
-    Serial.println(strData);
+    if (strData != "")
+    {
+      Serial.println(strData);
+    }
 
     if (boolUp) forward();
     else if (boolRight) right();
@@ -127,16 +144,36 @@ void loop() {
     else if (boolCentr) stoping();
     else stoping();
 
-    if (tempSpeedMotor1 != maxSpeedMotor1 && !noSpeedUpFlag) tempSpeedMotor1 += 5;
-    if (tempSpeedMotor2 != maxSpeedMotor2 && !noSpeedUpFlag) tempSpeedMotor2 += 5;
+    if (tempSpeedMotor1 != maxSpeedMotor1 && !noSpeedUpFlag)
+    {
+      if (tempSpeedMotor1 < 5)
+      {
+        tempSpeedMotor1 += correctValueStartSpeedMotor1;
+      }
+      tempSpeedMotor1 += 5;
+    }
+
+    if (tempSpeedMotor2 != maxSpeedMotor2 && !noSpeedUpFlag)
+    {
+      if (tempSpeedMotor2 < 5)
+      {
+        tempSpeedMotor2 += correctValueStartSpeedMotor2;
+      }
+      tempSpeedMotor2 += 5;
+    }
+
+    if (tempSpeedMotor1 != 0 || tempSpeedMotor2 != 0)
+    {
+      Serial.print(tempSpeedMotor1);
+      Serial.print("\t");
+      Serial.println(tempSpeedMotor2);
+    }
 
     noSpeedUpFlag = false;
     ledForward();
   }
   strData = "";
 }
-
-
 
 
 
