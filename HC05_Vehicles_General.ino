@@ -3,7 +3,11 @@
 #define pinPWM1 6
 #define pinPWM2 10
 
+#define INIT_KEY 99
+#define INIT_ADDR 0
+
 #include <SoftwareSerial.h>
+#include <EEPROM.h>
 
 SoftwareSerial mySerial(2, 3);
 
@@ -31,6 +35,16 @@ byte correctValueStartSpeedMotor2 = 0;
 byte directionMotion = 0; // 0 - stopring / 1 - forward / 2 - bakward / 3 - left / 4 - right
 
 
+struct GeneralStruct
+{
+  byte STRUCT_maxSpeedMotor1 = 255;
+  byte STRUCT_maxSpeedMotor2 = 255;
+  byte STRUCT_correctValueStartSpeedMotor1 = 0;
+  byte STRUCT_correctValueStartSpeedMotor2 = 0;
+};
+
+GeneralStruct currentGenStruct;
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 void setup()  {
@@ -53,6 +67,20 @@ void setup()  {
   // Timer1 (пины 9, 10)
   TCCR1A = _BV(WGM10) | _BV(WGM12) | _BV(COM1A1) | _BV(COM1B1);
   TCCR1B = _BV(CS10);
+
+  if (EEPROM.read(INIT_ADDR) != (byte)INIT_KEY) // проверка на первый запуск
+  {
+    EEPROM.write(INIT_ADDR, (byte)INIT_KEY);      // записали ключ
+    EEPROM.put(1, currentGenStruct);
+  }
+  else
+  {
+    EEPROM.get(1, currentGenStruct); // инициализируем стандартные переменные
+    maxSpeedMotor1 = currentGenStruct.STRUCT_maxSpeedMotor1;
+    maxSpeedMotor2 = currentGenStruct.STRUCT_maxSpeedMotor2;
+    correctValueStartSpeedMotor1 = currentGenStruct.STRUCT_correctValueStartSpeedMotor1;
+    correctValueStartSpeedMotor2 = currentGenStruct.STRUCT_correctValueStartSpeedMotor2;
+  }
 }
 
 
@@ -137,6 +165,18 @@ void loop() {
       mySerial.println(correctValueStartSpeedMotor1);
       mySerial.print("Start speed M2 = ");
       mySerial.println(correctValueStartSpeedMotor2);
+    }
+
+    if (strData == "Save")
+    {
+      currentGenStruct.STRUCT_maxSpeedMotor1 = maxSpeedMotor1;
+      currentGenStruct.STRUCT_maxSpeedMotor2 = maxSpeedMotor2;
+      currentGenStruct.STRUCT_correctValueStartSpeedMotor1 = correctValueStartSpeedMotor1;
+      currentGenStruct.STRUCT_correctValueStartSpeedMotor2 = correctValueStartSpeedMotor2;
+      
+      EEPROM.put(1, currentGenStruct); // записываем новые значения переменных
+
+      mySerial.print("OK");
     }
   }
 
