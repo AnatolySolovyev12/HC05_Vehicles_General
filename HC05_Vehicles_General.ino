@@ -8,7 +8,8 @@
 SoftwareSerial mySerial(2, 3);
 
 String strData = "";
-boolean recievedFlag;
+
+bool noSpeedUpFlag = 0;
 
 bool boolUp = 0;
 bool boolDown = 0;
@@ -18,10 +19,14 @@ bool boolCentr = 0;
 bool light = 0;
 
 long long oldMillis = 0;
-byte interval = 60;
+byte interval = 500;
 
-byte pwmValueMotor1 = 255;
-byte pwmValueMotor2 = 255;
+byte maxSpeedMotor1 = 255;
+byte maxSpeedMotor2 = 255;
+byte tempSpeedMotor1 = 0;
+byte tempSpeedMotor2 = 0;
+
+byte directionMotion = 0; // 0 - stopring / 1 - forward / 2 - bakward / 3 - left / 4 - right
 
 //////////////////////////////////////////////////////////////////////////////////////////
 void setup()  {
@@ -52,13 +57,12 @@ void loop() {
 
   while (mySerial.available() > 0) {
     strData += (char)mySerial.read();
-    recievedFlag = true;
     delay(4); // без этого не успеет уловить и записать все символы в строку
   }
 
 
   if (strData != "") {
-    Serial.println(strData);
+    // Serial.println(strData);
 
     if (strData == "UD") boolUp = 1;
     if (strData == "UU") boolUp = 0;
@@ -70,43 +74,51 @@ void loop() {
     if (strData == "RU") boolRight = 0;
     if (strData == "CD") boolCentr = 1;
     if (strData == "CU") boolCentr = 0;
-    if (strData == "LFD") 
+    if (strData == "LFD")
     {
-    light = !light;
-    mySerial.print("Light = ");
-    mySerial.println(light ? "ON" : "OFF");
+      light = !light;
+      mySerial.print("Light = ");
+      mySerial.println(light ? "ON" : "OFF");
     }
     //if (strData == "LFU") mySerial.write("TEST");
 
-    if (strData == "L+" && pwmValueMotor1 < 255)
+    if (strData == "L+" && maxSpeedMotor1 < 255)
     {
-      pwmValueMotor1 += 5;
-      mySerial.print(pwmValueMotor1);
+      maxSpeedMotor1 += 5;
+      mySerial.print(maxSpeedMotor1);
     }
 
-    if (strData == "R+" && pwmValueMotor2 < 255)
+    if (strData == "R+" && maxSpeedMotor2 < 255)
     {
-      pwmValueMotor2 += 5;
-      mySerial.print(pwmValueMotor2);
+      maxSpeedMotor2 += 5;
+      mySerial.print(maxSpeedMotor2);
     }
 
-    if (strData == "L-" && pwmValueMotor1 > 0)
+    if (strData == "L-" && maxSpeedMotor1 > 0)
     {
-      pwmValueMotor1 -= 5;
-      mySerial.print(pwmValueMotor1);
+      maxSpeedMotor1 -= 5;
+      mySerial.print(maxSpeedMotor1);
     }
 
-    if (strData == "R-" && pwmValueMotor2 > 0)
+    if (strData == "R-" && maxSpeedMotor2 > 0)
     {
-      pwmValueMotor2 -= 5;
-      mySerial.print(pwmValueMotor2);
+      maxSpeedMotor2 -= 5;
+      mySerial.print(maxSpeedMotor2);
     }
   }
 
 
-  if (recievedFlag && (millis() - oldMillis >= interval)) // защита от дерганья если быстро переключать
+  if (millis() - oldMillis >= interval) // защита от дерганья если быстро переключать
   {
     oldMillis = millis();
+
+
+
+    Serial.print(tempSpeedMotor1);
+    Serial.print("\t");
+    Serial.print(tempSpeedMotor2);
+    Serial.print("\t");
+    Serial.println(strData);
 
     if (boolUp) forward();
     else if (boolRight) right();
@@ -115,9 +127,12 @@ void loop() {
     else if (boolCentr) stoping();
     else stoping();
 
+    if (tempSpeedMotor1 != maxSpeedMotor1 && !noSpeedUpFlag) tempSpeedMotor1 += 5;
+    if (tempSpeedMotor2 != maxSpeedMotor2 && !noSpeedUpFlag) tempSpeedMotor2 += 5;
+
+    noSpeedUpFlag = false;
     ledForward();
   }
-  recievedFlag = false;
   strData = "";
 }
 
@@ -128,42 +143,70 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////////
 void forward() // движение вперед
 {
-  analogWrite(pinPWM1, pwmValueMotor1);
+  if (directionMotion == 2 || directionMotion == 3 || directionMotion == 4)
+  {
+    tempSpeedMotor1 = 0;
+    tempSpeedMotor2 = 0;
+  }
+  analogWrite(pinPWM1, tempSpeedMotor1);
   analogWrite(pinIN1, 0);
-  analogWrite(pinPWM2, pwmValueMotor2);
+  analogWrite(pinPWM2, tempSpeedMotor2);
   analogWrite(pinIN2, 0);
+  directionMotion = 1;
 }
 
 void right() // движение вправо
 {
-  analogWrite(pinPWM1, pwmValueMotor1);
+  if (directionMotion == 1 || directionMotion == 2 || directionMotion == 3)
+  {
+    tempSpeedMotor1 = 0;
+    tempSpeedMotor2 = 0;
+  }
+  analogWrite(pinPWM1, tempSpeedMotor1);
   analogWrite(pinIN1, 0);
   analogWrite(pinPWM2, 0);
-  analogWrite(pinIN2, pwmValueMotor2);
+  analogWrite(pinIN2, tempSpeedMotor2);
+  directionMotion = 4;
 }
 
 void backward() // движение назад
 {
+  if (directionMotion == 1 || directionMotion == 3 || directionMotion == 4)
+  {
+    tempSpeedMotor1 = 0;
+    tempSpeedMotor2 = 0;
+  }
   analogWrite(pinPWM1, 0);
-  analogWrite(pinIN1, pwmValueMotor1);
+  analogWrite(pinIN1, tempSpeedMotor1);
   analogWrite(pinPWM2, 0);
-  analogWrite(pinIN2, pwmValueMotor2);
+  analogWrite(pinIN2, tempSpeedMotor2);
+  directionMotion = 2;
 }
 
 void left() // движение влево
 {
+  if (directionMotion == 1 || directionMotion == 2 || directionMotion == 4)
+  {
+    tempSpeedMotor1 = 0;
+    tempSpeedMotor2 = 0;
+  }
   analogWrite(pinPWM1, 0);
-  analogWrite(pinIN1, pwmValueMotor1);
-  analogWrite(pinPWM2, pwmValueMotor2);
+  analogWrite(pinIN1, tempSpeedMotor1);
+  analogWrite(pinPWM2, tempSpeedMotor2);
   analogWrite(pinIN2, 0);
+  directionMotion = 3;
 }
 
 void stoping() // остановка
 {
+  tempSpeedMotor1 = 0;
+  tempSpeedMotor2 = 0;
   analogWrite(pinPWM1, 0);
   analogWrite(pinIN1, 0);
   analogWrite(pinPWM2, 0);
   analogWrite(pinIN2, 0);
+  directionMotion = 0;
+  noSpeedUpFlag = true;
 }
 
 void ledForward() // светодиоды спереди
