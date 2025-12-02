@@ -60,6 +60,7 @@ void setup()  {
   Serial.begin(9600);
   mySerial.begin(9600);
 
+  // изменяем работу PWM таймеров для устранения писка в работе двигателей
   // Timer0 (пины 5, 6)
   TCCR0A = _BV(WGM00) | _BV(WGM01) | _BV(COM0A1) | _BV(COM0B1);
   TCCR0B = _BV(CS00); // предделитель 1
@@ -68,6 +69,10 @@ void setup()  {
   TCCR1A = _BV(WGM10) | _BV(WGM12) | _BV(COM1A1) | _BV(COM1B1);
   TCCR1B = _BV(CS10);
 
+  //Алтренативная настрйока таймеров
+  //TCCR1A = 0b00000001;  // 8bit
+  //TCCR1B = 0b00000101;  // x1024 phase correct
+  
   if (EEPROM.read(INIT_ADDR) != (byte)INIT_KEY) // проверка на первый запуск
   {
     EEPROM.write(INIT_ADDR, (byte)INIT_KEY);      // записали ключ
