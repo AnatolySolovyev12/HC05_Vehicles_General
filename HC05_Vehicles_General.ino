@@ -72,7 +72,7 @@ void setup()  {
   //Алтренативная настрйока таймеров
   //TCCR1A = 0b00000001;  // 8bit
   //TCCR1B = 0b00000101;  // x1024 phase correct
-  
+
   if (EEPROM.read(INIT_ADDR) != (byte)INIT_KEY) // проверка на первый запуск
   {
     EEPROM.write(INIT_ADDR, (byte)INIT_KEY);      // записали ключ
@@ -102,7 +102,7 @@ void loop() {
 
   //******************************************* // Обрабатываем полученную строку
   if (strData != "") {
-    // Serial.println(strData);
+     Serial.println(strData);
 
     if (strData == "UD") boolUp = 1;
     if (strData == "UU") boolUp = 0;
@@ -172,7 +172,7 @@ void loop() {
       mySerial.println(correctValueStartSpeedMotor2);
       int val = analogRead(A4);
       float voltage = (val * 5.0 / 1023.0) * 2.0;  // Значение на пине * максимальное напряжение для АЦП (5В - стандартное) / разрядность АЦП * R1+R2/R2 (R2 - тот который к GND)
-      mySerial.print("Voltage: "); 
+      mySerial.print("Voltage: ");
       mySerial.println(String(voltage, 2));
     }
 
@@ -224,14 +224,14 @@ void loop() {
       }
       tempSpeedMotor2 += 5;
     }
-
+/*
     if (tempSpeedMotor1 != 0 || tempSpeedMotor2 != 0)
     {
       Serial.print(tempSpeedMotor1);
       Serial.print("\t");
       Serial.println(tempSpeedMotor2);
     }
-
+*/
     noSpeedUpFlag = false;
     ledForward();
   }
@@ -253,6 +253,11 @@ void forward() // движение вперед
   analogWrite(pinPWM2, tempSpeedMotor2);
   analogWrite(pinIN2, 0);
   directionMotion = 1;
+  boolUp = true;
+  boolRight = false;
+  boolDown = false;
+  boolLeft = false;
+  boolCentr = false;
 }
 
 void right() // движение вправо
@@ -267,6 +272,11 @@ void right() // движение вправо
   analogWrite(pinPWM2, 0);
   analogWrite(pinIN2, tempSpeedMotor2);
   directionMotion = 4;
+  boolUp = false;
+  boolRight = true;
+  boolDown = false;
+  boolLeft = false;
+  boolCentr = false;
 }
 
 void backward() // движение назад
@@ -281,6 +291,11 @@ void backward() // движение назад
   analogWrite(pinPWM2, 0);
   analogWrite(pinIN2, tempSpeedMotor2);
   directionMotion = 2;
+  boolUp = false;
+  boolRight = false;
+  boolDown = true;
+  boolLeft = false;
+  boolCentr = false;
 }
 
 void left() // движение влево
@@ -295,6 +310,11 @@ void left() // движение влево
   analogWrite(pinPWM2, tempSpeedMotor2);
   analogWrite(pinIN2, 0);
   directionMotion = 3;
+  boolUp = false;
+  boolRight = false;
+  boolDown = false;
+  boolLeft = true;
+  boolCentr = false;
 }
 
 void stoping() // остановка
@@ -307,6 +327,11 @@ void stoping() // остановка
   analogWrite(pinIN2, 0);
   directionMotion = 0;
   noSpeedUpFlag = true;
+  boolUp = false;
+  boolRight = false;
+  boolDown = false;
+  boolLeft = false;
+  boolCentr = false;
 }
 
 void ledForward() // светодиоды спереди
