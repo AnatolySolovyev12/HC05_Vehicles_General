@@ -6,10 +6,16 @@
 #define INIT_KEY 99
 #define INIT_ADDR 0
 
+#define HC_TRIG 7
+#define HC_ECHO 8
+
 #include <SoftwareSerial.h>
 #include <EEPROM.h>
+#include <GyverPing.h>
 
 SoftwareSerial mySerial(2, 3);
+
+GPingSync sonar(HC_TRIG, HC_ECHO);
 
 String strData = "";
 
@@ -25,7 +31,8 @@ bool boolCentr = 0;
 bool light = 0;
 
 long long oldMillis = 0;
-byte interval = 500;
+int interval = 500;
+byte autoInterval = 500;
 
 byte maxSpeedMotor1 = 255;
 byte maxSpeedMotor2 = 255;
@@ -124,10 +131,10 @@ void loop() {
       mySerial.println(String(voltage, 2));
     }
 
-    if (strData == "auto") 
+    if (strData == "Mode")
     {
       automat = !automat; // смена режима работы авто/ручной
-      mySerial.println(automat ? "AUTO" : "Driver");
+      mySerial.println(automat ? "Auto" : "Driver");
     }
     if (strData == "UD") boolUp = 1;
     if (strData == "UU") boolUp = 0;
@@ -211,9 +218,40 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////////
 void autoFunc() // автоматическое управление
 {
-  Serial.print("AUTO");
-  delay(100);
+  if (millis() - oldMillis >= autoInterval)
+  {
+    oldMillis = millis();
+
+    sonar.ping();
+    Serial.println(sonar.getSmooth());  // + усреднение, плавный точный сигнал
+
+    if (sonar.getSmooth() <= 150)
+    {
+      if (sonar.getSmooth() <= 50)
+      {
+        while (sonar.getSmooth() <= 180)
+        {
+          sonar.ping();
+          backward();
+          smoothPwm();
+        }
+      }
+      else
+      {
+        left();
+        smoothPwm();
+      }
+    }
+    else if (sonar.getSmooth() >= 160)
+    {
+      forward();
+      smoothPwm();
+    }
+    //else if (sonar.getSmooth() <= 10)
+    //  stoping();
+  }
 }
+
 
 void driverFunc() // ручное управление
 {
@@ -233,24 +271,8 @@ void driverFunc() // ручное управление
     else if (boolCentr) stoping();
     else stoping();
 
-    if (tempSpeedMotor1 != maxSpeedMotor1 && !noSpeedUpFlag)
-    {
-      if (tempSpeedMotor1 < 5)
-      {
-        tempSpeedMotor1 += correctValueStartSpeedMotor1;
-      }
-      tempSpeedMotor1 += 5;
-    }
+    smoothPwm();
 
-    if (tempSpeedMotor2 != maxSpeedMotor2 && !noSpeedUpFlag)
-    {
-      if (tempSpeedMotor2 < 5)
-      {
-        tempSpeedMotor2 += correctValueStartSpeedMotor2;
-      }
-      tempSpeedMotor2 += 5;
-    }
-    noSpeedUpFlag = false;
     ledForward();
   }
 }
@@ -352,4 +374,26 @@ void ledForward() // светодиоды спереди
 {
   digitalWrite(A0, light);
   // digitalWrite(A2, light);
+}
+
+void smoothPwm()
+{
+  if (tempSpeedMotor1 != maxSpeedMotor1 && !noSpeedUpFlag)
+  {
+    if (tempSpeedMotor1 < 5)
+    {
+      tempSpeedMotor1 += correctValueStartSpeedMotor1;
+    }
+    tempSpeedMotor1 += 5;
+  }
+
+  if (tempSpeedMotor2 != maxSpeedMotor2 && !noSpeedUpFlag)
+  {
+    if (tempSpeedMotor2 < 5)
+    {
+      tempSpeedMotor2 += correctValueStartSpeedMotor2;
+    }
+    tempSpeedMotor2 += 5;
+  }
+  noSpeedUpFlag = false;
 }
