@@ -13,6 +13,8 @@ SoftwareSerial mySerial(2, 3);
 
 String strData = "";
 
+bool automat = false;
+
 bool noSpeedUpFlag = 0;
 
 bool boolUp = 0;
@@ -55,7 +57,7 @@ void setup()  {
   pinMode (pinIN2, OUTPUT);
 
   pinMode (A0, OUTPUT);
-  pinMode (A2, OUTPUT);
+  //pinMode (A2, OUTPUT);
 
   Serial.begin(9600);
   mySerial.begin(9600);
@@ -102,8 +104,31 @@ void loop() {
 
   //******************************************* // Обрабатываем полученную строку
   if (strData != "") {
-     Serial.println(strData);
+    Serial.println(strData);
 
+    if (strData == "Status") // сбор данных ключевых переменных и напряжения батареи
+    {
+      mySerial.print("Light = ");
+      mySerial.println(light ? "ON" : "OFF");
+      mySerial.print("Max speed M1 = ");
+      mySerial.println(maxSpeedMotor1);
+      mySerial.print("Max speed M2 = ");
+      mySerial.println(maxSpeedMotor2);
+      mySerial.print("Start speed M1 = ");
+      mySerial.println(correctValueStartSpeedMotor1);
+      mySerial.print("Start speed M2 = ");
+      mySerial.println(correctValueStartSpeedMotor2);
+      int val = analogRead(A4);
+      float voltage = (val * 5.0 / 1023.0) * 2.0;  // Значение на пине * максимальное напряжение для АЦП (5В - стандартное) / разрядность АЦП * R1+R2/R2 (R2 - тот который к GND)
+      mySerial.print("Voltage: ");
+      mySerial.println(String(voltage, 2));
+    }
+
+    if (strData == "auto") 
+    {
+      automat = !automat; // смена режима работы авто/ручной
+      mySerial.println(automat ? "AUTO" : "Driver");
+    }
     if (strData == "UD") boolUp = 1;
     if (strData == "UU") boolUp = 0;
     if (strData == "DD") boolDown = 1;
@@ -158,24 +183,6 @@ void loop() {
       mySerial.print(correctValueStartSpeedMotor2);
     }
 
-    if (strData == "Status")
-    {
-      mySerial.print("Light = ");
-      mySerial.println(light ? "ON" : "OFF");
-      mySerial.print("Max speed M1 = ");
-      mySerial.println(maxSpeedMotor1);
-      mySerial.print("Max speed M2 = ");
-      mySerial.println(maxSpeedMotor2);
-      mySerial.print("Start speed M1 = ");
-      mySerial.println(correctValueStartSpeedMotor1);
-      mySerial.print("Start speed M2 = ");
-      mySerial.println(correctValueStartSpeedMotor2);
-      int val = analogRead(A4);
-      float voltage = (val * 5.0 / 1023.0) * 2.0;  // Значение на пине * максимальное напряжение для АЦП (5В - стандартное) / разрядность АЦП * R1+R2/R2 (R2 - тот который к GND)
-      mySerial.print("Voltage: ");
-      mySerial.println(String(voltage, 2));
-    }
-
     if (strData == "Save")
     {
       currentGenStruct.STRUCT_maxSpeedMotor1 = maxSpeedMotor1;
@@ -191,6 +198,25 @@ void loop() {
 
 
   //****************************************************** // Выполняем управление согласно полученной информации
+  if (!automat)
+    driverFunc();
+  else
+    autoFunc();
+
+  strData = "";
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+void autoFunc() // автоматическое управление
+{
+  Serial.print("AUTO");
+  delay(100);
+}
+
+void driverFunc() // ручное управление
+{
   if (millis() - oldMillis >= interval)
   {
     oldMillis = millis();
@@ -224,23 +250,11 @@ void loop() {
       }
       tempSpeedMotor2 += 5;
     }
-/*
-    if (tempSpeedMotor1 != 0 || tempSpeedMotor2 != 0)
-    {
-      Serial.print(tempSpeedMotor1);
-      Serial.print("\t");
-      Serial.println(tempSpeedMotor2);
-    }
-*/
     noSpeedUpFlag = false;
     ledForward();
   }
-  strData = "";
 }
 
-
-
-//////////////////////////////////////////////////////////////////////////////
 void forward() // движение вперед
 {
   if (directionMotion == 2 || directionMotion == 3 || directionMotion == 4)
@@ -337,5 +351,5 @@ void stoping() // остановка
 void ledForward() // светодиоды спереди
 {
   digitalWrite(A0, light);
-  digitalWrite(A2, light);
+  // digitalWrite(A2, light);
 }
