@@ -20,7 +20,7 @@ GPingSync sonar(HC_TRIG, HC_ECHO);
 String strData = "";
 
 bool automat = false;
-
+bool autoRunning = false;
 bool noSpeedUpFlag = 0;
 
 bool boolUp = 0;
@@ -31,8 +31,8 @@ bool boolCentr = 0;
 bool light = 0;
 
 long long oldMillis = 0;
-int interval = 500;
-byte autoInterval = 500;
+byte interval = 250;
+byte autoInterval = 100;
 
 byte maxSpeedMotor1 = 255;
 byte maxSpeedMotor2 = 255;
@@ -95,6 +95,8 @@ void setup()  {
     correctValueStartSpeedMotor1 = currentGenStruct.STRUCT_correctValueStartSpeedMotor1;
     correctValueStartSpeedMotor2 = currentGenStruct.STRUCT_correctValueStartSpeedMotor2;
   }
+
+  oldMillis = millis();
 }
 
 
@@ -134,8 +136,10 @@ void loop() {
     if (strData == "Mode")
     {
       automat = !automat; // смена режима работы авто/ручной
+      stoping();
       mySerial.println(automat ? "Auto" : "Driver");
     }
+
     if (strData == "UD") boolUp = 1;
     if (strData == "UU") boolUp = 0;
     if (strData == "DD") boolDown = 1;
@@ -218,6 +222,8 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////////
 void autoFunc() // автоматическое управление
 {
+  autoRunning = true;
+
   if (millis() - oldMillis >= autoInterval)
   {
     oldMillis = millis();
@@ -225,15 +231,15 @@ void autoFunc() // автоматическое управление
     sonar.ping();
     Serial.println(sonar.getSmooth());  // + усреднение, плавный точный сигнал
 
-    if (sonar.getSmooth() <= 150)
+    if (sonar.getSmooth() <= 150 && sonar.getSmooth()!= 0)
     {
-      if (sonar.getSmooth() <= 50)
-      {
-        while (sonar.getSmooth() <= 180)
-        {
+      if (sonar.getSmooth() <= 50) {
+        
+        for (byte i = 0; i < 100 && sonar.getSmooth() <= 200; i++) {
           sonar.ping();
           backward();
           smoothPwm();
+          delay(20);
         }
       }
       else
@@ -242,13 +248,12 @@ void autoFunc() // автоматическое управление
         smoothPwm();
       }
     }
-    else if (sonar.getSmooth() >= 160)
+    else if (sonar.getSmooth() > 150 || sonar.getSmooth() == 0)
     {
       forward();
       smoothPwm();
     }
-    //else if (sonar.getSmooth() <= 10)
-    //  stoping();
+    autoRunning = false;
   }
 }
 
